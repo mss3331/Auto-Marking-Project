@@ -53,16 +53,37 @@ def checkStructure():
 
     return root,submissions_dir
 
-
 def printError(message):
     print("Error:\n"+message)
     input("Press Enter to Exit...")
     exit(-1)
 
+def mark_submission(student_dir):
+    student_name, exercise_dir = _getStudentInfo(student_dir)
+    return 0
+
+def _getStudentInfo(student_dir):
+    '''This function process the student_dir to extract a student's name and the actha, Exercise's folder
+    :parameter
+    -DirEntry object: It has the directory info of the current submission
+    :return
+    student_name: processed student name (e.g.Abbygail Yuen Mun Ong_3745904_assignsubmission_file_ --> Abbygail Yuen Mun Ong )
+    exercise_dir: DirEntry that points to the actual location of the students work (i.e. dir that has 1_Assembly & 2_HACK) '''
+    student_name = student_dir.name.split("_")[0]
+    exercise_dir = os.listdir(student_dir)
+    print(student_name," has sub-folders: ",exercise_dir)
+    exit(0)
+    return student_name, exercise_dir
 if __name__=='__main__':
-    checkStructure()
+    root, submissions_dir= checkStructure()
     configurations=getYAMLConfig()
 
-    #Print the main sections
-    for section in configurations:
-        print(section)
+    all_submissions = os.scandir(submissions_dir)
+
+    #For each student\submission do
+    for student_dir in all_submissions:
+        if student_dir.is_dir():
+            result = mark_submission(student_dir)
+
+
+
