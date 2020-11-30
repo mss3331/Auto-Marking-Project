@@ -1,7 +1,9 @@
 import subprocess
 import yaml
 import os
+import pandas as pd
 from difflib import SequenceMatcher
+
 
 def getDirOrFile(dir_name, DirEntry_iterator, threshold=0.8):
     '''This function compute the similarity index between a directory name and a list of DirEntry (i.e. contains path, and name of the directory)
@@ -26,16 +28,23 @@ def getDirOrFile(dir_name, DirEntry_iterator, threshold=0.8):
 def markFile(file_path, emulator_name):
     '''This function execute the command HardwareSimulation file.tst
     :parameter
-    file_path: sting that contains the file full path (e.g. ./submissions/student1/exer3/1_assembly/Factorial.tst)
-    emulator_name: string that contains either HardwareSimulator or CPUEmulator'''
+    - file_path: sting that contains the file full path (e.g. ./submissions/student1/exer3/1_assembly/Factorial.tst)
+    - emulator_name: string that contains either HardwareSimulator or CPUEmulator
+    :returns
+    - is_successful : True if success or False otherwise
+    - feedback : contains error messages if found or constant string SUCCESS otherwise
+    '''
 
     command=subprocess.run([emulator_name,file_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE, text=True, shell=True)
 
     cmd_output = command.stdout
+    feedback = command.stderr
+    is_successful = False
     if(cmd_output.find("Comparison ended success")>=0):
-        return True, cmd_output
-    else:
-        return False,command.stderr
+        is_successful = True
+        feedback = SUCCESS
+
+    return is_successful, feedback.rstrip('\n') # "End of ... succussfuly\n" --> "End of ... succussfuly"
 
 def getYAMLConfig():
     '''This function return a dictionary that contains all configurations for the exersise'''
@@ -73,15 +82,6 @@ def printError(message):
     input("Press Enter to Exit...")
     exit(-1)
 
-# def _getStudentActualSubmission(student_dir):
-#     '''This function process the student_dir to extract a student's name and the actha, Exercise's folder
-#     :parameter
-#     - student_dir: A DirEntry object that has the directory info of the current submission
-#     :return
-#     - exercise_dir: DirEntry that points to the actual location of the students work (i.e. dir that has 1_Assembly & 2_HACK) '''
-#
-#     exercise_dir = _searchForDirOrFile()
-#     return exercise_dir
 def _searchForDirOrFile(name,current_dir):
     '''This is a recursive function that search for a specific directory in a breadth first fashion
     (i.e. search first for the name in the current_dir then go deeper)
@@ -115,49 +115,87 @@ def mark_submission(student_dir):
     :parameter
     - student_dir:A DirEntry object that has the directory info of the current submission
     :returns
-    - total_marks: dictionary that contains the name of the file with its corresponding deserved mark
-    - total_feedbacks: dictionary that contains all the feedback for each .tst file.
+    - student_result dictionary that contains:
+        - marks_dic: dictionary that contains the name of the file with its corresponding deserved mark
+        - feedbacks_dic: dictionary that contains all the feedback for each .tst file.
+        - mistakes_feedback_list: list of tuple (file_name, error_message) that contains only mistakes.
+        This list is subset of feedbacks_dic
     '''
     student_name = student_dir.name.split("_")[0] # Zaid Ahmad_3522_submision --> Zaid Ahmad
-    total_marks={} #dictionary that holds all the marks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
-    total_feedbacks={} #dictionary that holds all the feedbacks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
+    marks_dic={} #dictionary that holds all the marks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
+    feedbacks_dic={} #dictionary that holds all the feedbacks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
 
 
     #for each section in the exercise get the .tst files and test them
     for section in configurations:
-        folder_name = configurations[section]["Folder_Name"]
         emulator_name = configurations[section]["Emulator_Name"]
         student_tst_list = configurations[section]["Test_Files"]
-        num_of_tst_files = len(student_tst_list)
 
-        for tst_mark in student_tst_list:# run the emulator for each .tst file and get the result
-            tst, mark = tst_mark.split(" ") # Mult.tst 20 --> tst="Mult" and mark="20"
+        for tst_mark_yml in student_tst_list:# run the emulator for each .tst file and get the result
+            file_name, mark = tst_mark_yml.split(" ") # Mult.tst 20 --> tst="Mult" and mark="20"
             mark = int(mark) # mark = "20" --> 20
 
-            tst_file = _searchForDirOrFile(tst,student_dir)
-            file_name = tst_file.name
+            tst_file = _searchForDirOrFile(file_name,student_dir)
+
             if tst_file:
-                success, feedback = markFile(tst_file,emulator_name)
-                total_marks[file_name] = 0
-                total_feedbacks[file_name]= feedback
-                if success:
-                    total_marks[file_name] = mark
-            else:
-                total_marks[file_name] = 0
-                total_feedbacks[file_name] = "Error: %s not found!!"%tst_file.name
-    print("%s:%d"%(student_name,sum(total_marks.values())))
-    print(total_marks)
+                is_success, feedback = markFile(tst_file,emulator_name)
+                marks_dic[file_name] = 0
+                feedbacks_dic[file_name]= feedback
+                if is_success:
+                    marks_dic[file_name] = mark
+            else: # if we didnt find the tst_file print error
+                marks_dic[file_name] = 0
+                feedbacks_dic[file_name] = "Error: %s not found!!"%file_name
 
-    return total_marks,total_feedbacks
-if __name__=='__main__':
-    root, submissions_dir= checkStructure()
-    configurations=getYAMLConfig()
-    all_submissions = os.scandir(submissions_dir)
+    mistakes_feedback = [(key, feedbacks_dic[key]) for key in feedbacks_dic if feedbacks_dic[key] != SUCCESS ]
+    if not mistakes_feedback: # if the mistake feedback is empty list make it ""
+        mistakes_feedback = "No Mistakes"
 
-    #For each student\submission do
+    total_marks = sum(marks_dic.values())
+    print( "{}:{}%. {}".format(student_name, total_marks, mistakes_feedback) )
+
+    one_row_result = marks_dic
+    one_row_result["Total"]=total_marks
+    one_row_result["Feedback"] = str(mistakes_feedback)
+
+    # student_result = {"student_name":student_name, "marks_dic":marks_dic,
+    #           "feedbacks_dic":feedbacks_dic, "mistakes_feedback":mistakes_feedback}
+
+    return student_name, one_row_result
+
+#global variables
+# Constant variable
+SUCCESS = "success"
+
+root, submissions_dir= checkStructure()
+configurations=getYAMLConfig()
+all_submissions = os.scandir(submissions_dir)
+
+def run():
+    all_results = {}
+    # all_students_marks_dic={}
+    # all_students_feedback_dic={}
+    # all_students_mistakes_dic={}
+    # For each student aka submission, do
     for student_dir in all_submissions:
+        # submissions folder may contain non folders (e.g. submissions.rar that contain all submissions will be skipped)
         if student_dir.is_dir():
-            result = mark_submission(student_dir)
+            student_name, one_row_result = mark_submission(student_dir)
+            all_results[student_name] = one_row_result
+            # extract all results for each student
+            # student_name = student_result_dic["student_name"]
+            # marks = student_result_dic["marks_dic"]
+            # feedbacks = student_result_dic["feedbacks_dic"]
+            # mistakes = student_result_dic["mistakes_feedback"]
+            #
+            # all_students_marks_dic[student_name] = marks
+            # all_students_feedback_dic[student_name] = feedbacks
+            # all_students_mistakes_dic[student_name] = str(mistakes)
+    root_folder_name = root.split("\\")[-1]
+    df = pd.DataFrame(data=all_results).T
+    df.to_excel(root_folder_name + '_Marks.xlsx')
 
+if __name__ == '__main__':
+    run()
 
 
