@@ -78,7 +78,7 @@ def checkStructure():
     return root,submissions_dir
 
 def printError(message):
-    print("Error:\n"+message)
+    print("Error:\n"+message,flush=True)
     input("Press Enter to Exit...")
     exit(-1)
 
@@ -138,7 +138,7 @@ def mark_submission(student_dir):
             tst_file = _searchForDirOrFile(file_name,student_dir)
 
             if tst_file:
-                is_success, feedback = markFile(tst_file,emulator_name)
+                is_success, feedback = markFile(tst_file.path,emulator_name)
                 marks_dic[file_name] = 0
                 feedbacks_dic[file_name]= feedback
                 if is_success:
@@ -152,10 +152,10 @@ def mark_submission(student_dir):
         mistakes_feedback = "No Mistakes"
 
     total_marks = sum(marks_dic.values())
-    print( "{}:{}%. {}".format(student_name, total_marks, mistakes_feedback) )
+    print( "{}:{}%. {}".format(student_name, total_marks, mistakes_feedback), flush=True )
 
     one_row_result = marks_dic
-    one_row_result["Total"]=total_marks
+    one_row_result["Total"] = total_marks
     one_row_result["Feedback"] = str(mistakes_feedback)
 
     # student_result = {"student_name":student_name, "marks_dic":marks_dic,
@@ -195,6 +195,7 @@ def run():
     df = pd.DataFrame(data=all_results).T
     df.to_excel(root_folder_name + '_Marks.xlsx')
 
+    input(("="*70)+"\nFinished Marking All Students, Press Enter to exit")
 if __name__ == '__main__':
     run()
 
