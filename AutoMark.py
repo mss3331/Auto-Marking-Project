@@ -6,14 +6,15 @@ from difflib import SequenceMatcher
 
 
 def getDirOrFile(dir_name, DirEntry_iterator, threshold=0.8):
-    '''This function compute the similarity index between a directory name and a list of DirEntry (i.e. contains path, and name of the directory)
+    """This function compute the similarity index between a directory name and a list of DirEntry
+    (i.e. contains path, and name of the directory)
     :parameter
     dir_name: the name of the desired directory (e.g. 1_Assembly)
     DirEntry: ScandirIterator of directories and files found in specific folder
     threshold: similarity ratio threshold
     :return
     target_dir=DirEntry object: if the dir_name match one of the directory's name in the list. And None otherwise.
-    '''
+    """
     DirEntry_list = list(DirEntry_iterator)
     similarity_list = [(SequenceMatcher(None, dir_name.lower(), dir_entry.name.lower()).ratio()) for dir_entry in DirEntry_list]
     if len(similarity_list)==0:
@@ -26,16 +27,16 @@ def getDirOrFile(dir_name, DirEntry_iterator, threshold=0.8):
     else:# if nothing is found
         return None
 def markFile(file_path, emulator_name):
-    '''This function execute the command HardwareSimulation file.tst
+    """This function execute the command HardwareSimulation file.tst
     :parameter
     - file_path: sting that contains the file full path (e.g. ./submissions/student1/exer3/1_assembly/Factorial.tst)
     - emulator_name: string that contains either HardwareSimulator or CPUEmulator
     :returns
     - is_successful : True if success or False otherwise
     - feedback : contains error messages if found or constant string SUCCESS otherwise
-    '''
+    """
 
-    command=subprocess.run([emulator_name,file_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE, text=True, shell=True)
+    command = subprocess.run([emulator_name,file_path],stdout=subprocess.PIPE,stderr=subprocess.PIPE, text=True, shell=True)
 
     cmd_output = command.stdout
     feedback = command.stderr
@@ -47,7 +48,7 @@ def markFile(file_path, emulator_name):
     return is_successful, feedback.rstrip('\n') # "End of ... succussfuly\n" --> "End of ... succussfuly"
 
 def getYAMLConfig():
-    '''This function return a dictionary that contains all configurations for the exersise'''
+    """This function return a dictionary that contains all configurations for the exersise"""
     expected_config_file_name = "Exer_conf.yml"
     file=getDirOrFile(expected_config_file_name, os.scandir())
     if not file:
@@ -58,13 +59,13 @@ def getYAMLConfig():
     return configurations
 
 def checkStructure():
-    '''This function checks for the following:
+    """This function checks for the following:
         - YAML configuration exists
         - Submissions folder exists
         :return
         root : Current directory path
         submissions : The directory path that has all students' submissions
-        '''
+        """
     root = os.path.dirname(os.path.realpath(__file__))
 
     # get list of all directories
@@ -83,14 +84,14 @@ def printError(message):
     exit(-1)
 
 def _searchForDirOrFile(name,current_dir):
-    '''This is a recursive function that search for a specific directory in a breadth first fashion
+    """This is a recursive function that search for a specific directory in a breadth first fashion
     (i.e. search first for the name in the current_dir then go deeper)
     :parameter
     name: the target file\folder name
-    dir: is a DirEntry object
+    current_dir: is a DirEntry object. The searching will start by this directory
     :return
     target_dir: is a DirEntry object that contains the dir. If not found None is returned
-    '''
+    """
     target_dir=None
     dir_iterator= os.scandir(current_dir)
     found = getDirOrFile(name,dir_iterator)
@@ -109,8 +110,56 @@ def _searchForDirOrFile(name,current_dir):
                 return target_dir
 
     return target_dir
+def replaceMissingTstFileWithEmptyOne(tst_file_name, folder_name, student_dir):
+    """The purpose of this function is to prevent invoking built-in tst file by inserting empty file that have the
+    same tst built-in file
+    :parameter
+    - tst_file_name: string of the target .tst file "e.g. Xor.tst
+    - folder_name: string of the target folder "e.g. 1_Assembly or 2_Hack or Excersise1"
+    - student_dir: A DirEntry object that has the directory info of the current submission
+    :returns
+    - True or False depends on whether we managed to do that or not, respectively """
+
+    return
+def _checkRequiredFiles(required_files_list, target_folder_name,url_of_our_tst,student_dir):
+    """
+    This function do two things:
+     1- check the existence of required_files_list and add a penalty if a file is missing
+     2- copy our .tst files to target_folder_name
+    :param required_files_list: list of all required files
+    :param target_folder_name: which folder to 1- search for the required files, 2- to copy our .tst files
+    :param url_of_our_tst: where to fetch our .tst files into the student's submission folder
+    :param student_dir: the current working directory
+    :return: total_penalties: summation of all penalties
+    :return: all_feedbacks: string that contains all feedbacks for the penalties
+    """
+    #case one, we have multiple sections for the excersise, hence, we should have a target_folder_name
+    total_penalties = 0
+    all_feedbacks = target_folder_name+":"
+    target_dir = _searchForDirOrFile(name=target_folder_name, current_dir=student_dir)
+    if target_dir:# if found a directory with same name then check the required files
+        for file_name_penalty in required_files_list:
+            temp = file_name_penalty.strip().split(' ')# CPU diagram.pdf -5 --> temp=['CPU','diagram.pdf', '-5']
+            penalty = float(temp[-1])
+            file_name = ' '.join(temp[:-1])
+            found = _searchForDirOrFile(file_name, target_dir)
+            if not found:
+                total_penalties+=penalty
+                all_feedbacks +=file_name_penalty + ", "
+                # Creates a new file to prevent the simulator to invoke the build-in .hdl file incase this file is a prerequist within other chip
+                if file_name.split('.')[-1] == 'hdl':
+                    with open(target_dir.path+"\\"+file_name, 'w') as fp: # create file C:\....\student1\section1\CPU.tst
+                        pass
+
+    else:# if we didn't find the specified folder then search for the required file in sub-directories
+        pass
+    # case two, we have only one section for the excersise, hence, we may not have a target_folder_name (i.e. target_folder_name='')
+    if total_penalties == 0:
+        all_feedbacks=""
+    return total_penalties, all_feedbacks
+
 def mark_submission(student_dir):
-    '''This method is responsible for doing the marking for each section in the exercise for one student.
+    """This method is responsible for doing the marking for each section in the exercise for one student.
     It uses the global variable "configurations" defined in the __main__ to get essential information
     :parameter
     - student_dir:A DirEntry object that has the directory info of the current submission
@@ -120,14 +169,31 @@ def mark_submission(student_dir):
         - feedbacks_dic: dictionary that contains all the feedback for each .tst file.
         - mistakes_feedback_list: list of tuple (file_name, error_message) that contains only mistakes.
         This list is subset of feedbacks_dic
-    '''
+    """
     student_name = student_dir.name.split("_")[0] # Zaid Ahmad_3522_submision --> Zaid Ahmad
     marks_dic={} #dictionary that holds all the marks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
     feedbacks_dic={} #dictionary that holds all the feedbacks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
-
-
-    #for each section in the exercise get the .tst files and test them
+    penalties_dic = {} # dictionary that holds all the penalties
+    #for each section in the exercise do the following
     for section in configurations:
+        """ 
+        Before we start makring student's solution, two things should done:
+         1- Check that all required files exist, if not, add a penalty and insert an empty file to prevent
+            invoking build-in files
+         2- Load our .tst files to the specified folder
+            step 1 and 2 are done in method "checkRequiredFiles"
+        """
+        required_files_list = configurations[section]["Check_Files"]
+        target_folder_name = configurations[section]["Folder_Name"]
+        url_of_our_tst = configurations[section]["URL_of_tst"]
+        penalties_dic[section], penalty_feedback = _checkRequiredFiles(required_files_list,target_folder_name,
+                                                                       url_of_our_tst,student_dir)
+        if penalties_dic[section] != 0:
+            if feedbacks_dic.get("Penalties:"):
+                feedbacks_dic["Penalties:"] += penalty_feedback # concatinate the penalties of all sections
+            else:
+                feedbacks_dic["Penalties:"] = penalty_feedback
+        """actual marking start down below:"""
         emulator_name = configurations[section]["Emulator_Name"]
         student_tst_list = configurations[section]["Test_Files"]
 
@@ -147,15 +213,17 @@ def mark_submission(student_dir):
                 marks_dic[file_name] = 0
                 feedbacks_dic[file_name] = "Error: %s not found!!"%file_name
 
+
     mistakes_feedback = [(key, feedbacks_dic[key]) for key in feedbacks_dic if feedbacks_dic[key] != SUCCESS ]
-    if not mistakes_feedback: # if the mistake feedback is empty list make it ""
-        mistakes_feedback = "No Mistakes"
+    # if not mistakes_feedback: # if the mistake feedback is empty list make it ""
+    #     mistakes_feedback = "No Mistakes"
 
     total_marks = sum(marks_dic.values())
-    print( "{}:{}%. {}".format(student_name, total_marks, mistakes_feedback), flush=True )
+    total_penalties = sum(penalties_dic.values())
+    print( "{}:{}%. {}".format(student_name, total_marks+total_penalties, mistakes_feedback), flush=True )
 
     one_row_result = marks_dic
-    one_row_result["Total"] = total_marks
+    one_row_result["Total"] = total_marks + total_penalties
     one_row_result["Feedback"] = str(mistakes_feedback)
 
     # student_result = {"student_name":student_name, "marks_dic":marks_dic,
