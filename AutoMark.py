@@ -110,17 +110,7 @@ def _searchForDirOrFile(name,current_dir):
                 return target_dir
 
     return target_dir
-def replaceMissingTstFileWithEmptyOne(tst_file_name, folder_name, student_dir):
-    """The purpose of this function is to prevent invoking built-in tst file by inserting empty file that have the
-    same tst built-in file
-    :parameter
-    - tst_file_name: string of the target .tst file "e.g. Xor.tst
-    - folder_name: string of the target folder "e.g. 1_Assembly or 2_Hack or Excersise1"
-    - student_dir: A DirEntry object that has the directory info of the current submission
-    :returns
-    - True or False depends on whether we managed to do that or not, respectively """
 
-    return
 def _checkRequiredFiles(required_files_list, target_folder_name,url_of_our_tst,student_dir):
     """
     This function do two things:
@@ -139,6 +129,8 @@ def _checkRequiredFiles(required_files_list, target_folder_name,url_of_our_tst,s
     target_dir = _searchForDirOrFile(name=target_folder_name, current_dir=student_dir)
     if target_dir:# if found a directory with same name then check the required files
         for file_name_penalty in required_files_list:
+            if not file_name_penalty: # if there is no required files, continue. In ".yaml" it would be like "Check_Files: - "
+                continue
             temp = file_name_penalty.strip().split(' ')# CPU diagram.pdf -5 --> temp=['CPU','diagram.pdf', '-5']
             penalty = float(temp[-1])
             file_name = ' '.join(temp[:-1])
@@ -201,7 +193,8 @@ def mark_submission(student_dir):
             file_name, mark = tst_mark_yml.split(" ") # Mult.tst 20 --> tst="Mult" and mark="20"
             mark = int(mark) # mark = "20" --> 20
 
-            tst_file = _searchForDirOrFile(file_name,student_dir)
+            target_folder_path = _searchForDirOrFile(target_folder_name,student_dir) # search for specific path
+            tst_file = _searchForDirOrFile(file_name,target_folder_path)
 
             if tst_file:
                 is_success, feedback = markFile(tst_file.path,emulator_name)
@@ -241,24 +234,15 @@ all_submissions = os.scandir(submissions_dir)
 
 def run():
     all_results = {}
-    # all_students_marks_dic={}
-    # all_students_feedback_dic={}
-    # all_students_mistakes_dic={}
+
     # For each student aka submission, do
     for student_dir in all_submissions:
         # submissions folder may contain non folders (e.g. submissions.rar that contain all submissions will be skipped)
         if student_dir.is_dir():
             student_name, one_row_result = mark_submission(student_dir)
             all_results[student_name] = one_row_result
-            # extract all results for each student
-            # student_name = student_result_dic["student_name"]
-            # marks = student_result_dic["marks_dic"]
-            # feedbacks = student_result_dic["feedbacks_dic"]
-            # mistakes = student_result_dic["mistakes_feedback"]
-            #
-            # all_students_marks_dic[student_name] = marks
-            # all_students_feedback_dic[student_name] = feedbacks
-            # all_students_mistakes_dic[student_name] = str(mistakes)
+        
+    
     root_folder_name = root.split("\\")[-1]
     df = pd.DataFrame(data=all_results).T
     df.to_excel(root_folder_name + '_Marks.xlsx')
