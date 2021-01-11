@@ -3,6 +3,7 @@ import yaml
 import os
 import pandas as pd
 from difflib import SequenceMatcher
+#Check submission CSF-Ex1-20213725 and CSF-Ex1-20307078 there is a mismatch ()
 
 
 def getDirOrFile(dir_name, DirEntry_iterator, threshold=0.8):
@@ -194,6 +195,8 @@ def mark_submission(student_dir):
             mark = int(mark) # mark = "20" --> 20
 
             target_folder_path = _searchForDirOrFile(target_folder_name,student_dir) # search for specific path
+            if not target_folder_path: #in case we didn't the specified folder within the student submission, use the student directory instead
+                target_folder_path = student_dir
             tst_file = _searchForDirOrFile(file_name,target_folder_path)
 
             if tst_file:
