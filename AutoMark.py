@@ -3,6 +3,7 @@ import yaml
 import os
 import pandas as pd
 import shutil
+from pprint import pprint
 from datetime import datetime
 from difflib import SequenceMatcher
 #Check submission CSF-Ex1-20213725 and CSF-Ex1-20307078 there is a mismatch ()
@@ -79,7 +80,7 @@ def checkStructure():
     # get list of all directories
     dir_list = os.scandir()
 
-    submissions_dir = getDirOrFile("Excer1 - those who achieved zero",dir_list, threshold=0.5)
+    submissions_dir = getDirOrFile("submissions",dir_list, threshold=0.8)
 
     if not submissions_dir:# if submissions_dir is None
         printError("submissions folder is not found in the current directory!!\n %s "%root)
@@ -87,8 +88,9 @@ def checkStructure():
 
     return root,submissions_dir
 
-def printError(message):
+def printError(message,extraInfo=None):
     print("Error:\n"+message,flush=True)
+    pprint(extraInfo)
     input("Press Enter to Exit...")
     exit(-1)
 
@@ -289,14 +291,28 @@ def run(use_our_tst):
 
 
 def unzipSubmissions(all_submissions):
+    unzip_errors = []
     for student_dir in all_submissions:
         # submissions folder may contain non folders (e.g. submissions.rar that contain all submissions will be skipped)
         if student_dir.is_dir():
             zip_file = getDirOrFile('.zip',os.scandir(student_dir),threshold=0)
             if zip_file.name.find('.zip')>=0: #if file name is .zip that mean it is a zip file
                 # print(zip_file)
-                shutil.unpack_archive(zip_file,zip_file.path.split(zip_file.name)[0])
-                os.remove(zip_file)
+                try:
+                    shutil.unpack_archive(zip_file,zip_file.path.split(zip_file.name)[0])
+                    os.remove(zip_file)
+                except Exception as e:
+                    unzip_errors.append([zip_file.name,e])
+    if len(unzip_errors)>0:
+        printError("Please go to the listed submissions down below and unzip them by yourself"+
+                   ", I couldn't unzip them due to an error\n."+
+                   " You can delete what inside the submission folder to get rid of this error,"
+                   "though, the corresponding student will get Zero.\n"+
+                   'To help you figuring out the problems, '+
+                   'check the following submission with corresponding error message:\n',unzip_errors)
+
+
+
 
 
 
