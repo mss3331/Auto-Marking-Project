@@ -296,17 +296,19 @@ def unzipSubmissions(all_submissions):
         # submissions folder may contain non folders (e.g. submissions.rar that contain all submissions will be skipped)
         if student_dir.is_dir():
             zip_file = getDirOrFile('.zip',os.scandir(student_dir),threshold=0)
+            if not zip_file:
+                continue
             if zip_file.name.find('.zip')>=0: #if file name is .zip that mean it is a zip file
                 # print(zip_file)
                 try:
                     shutil.unpack_archive(zip_file,zip_file.path.split(zip_file.name)[0])
                     os.remove(zip_file)
                 except Exception as e:
-                    unzip_errors.append([zip_file.name,e])
+                    unzip_errors.append([zip_file.path,e])
     if len(unzip_errors)>0:
         printError("Please go to the listed submissions down below and unzip them by yourself"+
-                   ", I couldn't unzip them due to an error\n."+
-                   " You can delete what inside the submission folder to get rid of this error,"
+                   ", I couldn't unzip them due to an error. After you solve the problems delete '.zip' files\n\n"+
+                   "You can delete what inside the submission folder to get rid of this error,"
                    "though, the corresponding student will get Zero.\n"+
                    'To help you figuring out the problems, '+
                    'check the following submission with corresponding error message:\n',unzip_errors)
