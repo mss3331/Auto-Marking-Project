@@ -3,6 +3,7 @@ import yaml
 import os
 import pandas as pd
 import shutil
+import traceback
 from pprint import pprint
 from datetime import datetime
 from difflib import SequenceMatcher
@@ -219,9 +220,19 @@ def mark_submission(student_dir, use_our_tst=False):
                     #students MyNot.tst path. #tst_file.path is actually path+name
                     tst_path = tst_file.path.split(tst_file.name)[0]
                     #copy .tst and .cmp from source to students folder
-                    shutil.copy2(os.path.join(url_of_our_tst, file_name), tst_path)
-                    compare_name = file_name.split('.')[0] + ".cmp" # Mult.tst -> Mult -> Mult.cmp
-                    shutil.copy2(os.path.join(url_of_our_tst, compare_name), tst_path)
+                    try:
+                        shutil.copy2(os.path.join(url_of_our_tst, file_name), tst_path)
+                        compare_name = file_name.split('.')[0] + ".cmp"  # Mult.tst -> Mult -> Mult.cmp
+                        shutil.copy2(os.path.join(url_of_our_tst, compare_name), tst_path)
+                    except Exception as e:
+                        if url_of_our_tst=="":
+                            printError("Where are our tst files resides?.Please add a path to the URL_of_tst's variable in "
+                                       "the Excer.yaml file to copy our tst files from that path")
+                        else:
+                            print("Couldn't copy a file from our tst folder")
+                            traceback.print_exc()
+
+
 
                 is_success, feedback = markFile(tst_file.path,emulator_name)
 
@@ -321,48 +332,58 @@ def unzipSubmissions(all_submissions):
 
 
 if __name__ == '__main__':
-    # global variables & Constant variable
-    SUCCESS = "success"
-    root, submissions_dir = checkStructure()
-    root_folder_name = root.split("\\")[-1]
 
-    configurations = getYAMLConfig()
-
-
-    all_submissions = list(os.scandir(submissions_dir))
-    #unzip submissions
-    unzipSubmissions(all_submissions)
-
-    results_student_tst = run(use_our_tst= False)
-
-    print("\n------------- Now we will marking using our .tst files -------------")
     try:
-        shutil.copytree(submissions_dir.path,submissions_dir.path+"_withOurTstScript")
-    except:
-        print("Notification:\n",submissions_dir.path+"_withOurTstScript"+" folder was created from a previous run."
-                                                                         "Hence, we will delete it and copy again\n")
-        shutil.rmtree(submissions_dir.path+"_withOurTstScript")
+        # global variables & Constant variable
+        SUCCESS = "success"
+        root, submissions_dir = checkStructure()
+        root_folder_name = root.split("\\")[-1]
+
+        configurations = getYAMLConfig()
+
+
+        all_submissions = list(os.scandir(submissions_dir))
+        #unzip submissions
+        unzipSubmissions(all_submissions)
+
+        results_student_tst = run(use_our_tst= False)
+
+        print("\n------------- Now we will marking using our .tst files -------------")
         try:
-            shutil.copytree(submissions_dir.path, submissions_dir.path + "_withOurTstScript")
-        except: printError("Cannot copy the content of "+submissions_dir.path+" to run our script using our .tst files")
+            shutil.copytree(submissions_dir.path,submissions_dir.path+"_withOurTstScript")
+        except:
+            print("Notification:\n",submissions_dir.path+"_withOurTstScript"+" folder was created from a previous run."
+                                                                             "Hence, we will delete it and copy again\n")
+            try:
+                shutil.rmtree(submissions_dir.path + "_withOurTstScript")
+                shutil.copytree(submissions_dir.path, submissions_dir.path + "_withOurTstScript")
+            except:
+                traceback.print_exc()
+                printError("")
 
-    all_submissions = list(os.scandir(submissions_dir.path+"_withOurTstScript"))
-    results_our_tst = run(use_our_tst=True)
+        all_submissions = list(os.scandir(submissions_dir.path+"_withOurTstScript"))
+        results_our_tst = run(use_our_tst=True)
 
-    #create average marking
-    average_mark = {}
-    for student_name in results_student_tst.keys():
-        student_tst_mark = results_student_tst[student_name]['Total']
-        our_tst_mark = results_our_tst[student_name]['Total']
-        avg = (student_tst_mark + our_tst_mark)/2
-        diff = student_tst_mark - our_tst_mark
-        average_mark[student_name] = {"Student .tst":student_tst_mark,
-                                      "Our .tst":our_tst_mark,
-                                      "difference":diff,
-                                      "Average":avg}
+        #create average marking
+        average_mark = {}
+        for student_name in results_student_tst.keys():
+            student_tst_mark = results_student_tst[student_name]['Total']
+            our_tst_mark = results_our_tst[student_name]['Total']
+            avg = (student_tst_mark + our_tst_mark)/2
+            diff = student_tst_mark - our_tst_mark
+            average_mark[student_name] = {"Student .tst":student_tst_mark,
+                                          "Our .tst":our_tst_mark,
+                                          "difference":diff,
+                                          "Average":avg}
 
-    save_to_excel(average_mark, extra="average_")
-    input(("=" * 70) + "\nFinished Marking All Students, Press Enter to exit")
-    # run("strict")
+        save_to_excel(average_mark, extra="average_")
+        input(("=" * 70) + "\nFinished Marking All Students, Press Enter to exit")
+            # run("strict")
+    except Exception as e:
+        traceback.print_exc()
+
+        printError("")
+
+
 
 
