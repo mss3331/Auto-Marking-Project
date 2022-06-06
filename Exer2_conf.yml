@@ -1,0 +1,53 @@
+Part1:
+  Folder_Name: Task_A
+  URL_of_tst: C:\Users\mss33\OneDrive - University of Nottingham Malaysia\My Lectures\My Lectures for Autumn 2021\Computer fundamentals\Excer2 - Quah\MasterTestFiles\Task_A
+  Emulator_Name: HardwareSimulator
+  Check_Files: # -5 represent the amount of penalties deducted if the file not found
+    -
+  Test_Files: # 2 3 represent the awarded marks if this .tst file run successfully
+    - Mux.tst 3
+    - DMux.tst 3
+
+Part2:
+  Folder_Name: Task_B
+  URL_of_tst: C:\Users\mss33\OneDrive - University of Nottingham Malaysia\My Lectures\My Lectures for Autumn 2021\Computer fundamentals\Excer2 - Quah\MasterTestFiles\Task_B
+  Emulator_Name: HardwareSimulator
+  Check_Files:
+    - 
+  Test_Files:
+    - Mux4Way16.tst 5
+    - Mux8Way16.tst 5
+    - DMux4Way.tst 5 
+    - DMux8Way.tst 5 
+
+Part3:
+  Folder_Name: Task_C
+  URL_of_tst: C:\Users\mss33\OneDrive - University of Nottingham Malaysia\My Lectures\My Lectures for Autumn 2021\Computer fundamentals\Excer2 - Quah\MasterTestFiles\Task_C
+  Emulator_Name: HardwareSimulator
+  Check_Files:
+    - 
+  Test_Files:
+    - Bit.tst 6
+    - Register.tst 6
+    - RAM8.tst 10
+    - RAM64.tst 10
+
+Part4:
+  Folder_Name: Task_D
+  URL_of_tst: C:\Users\mss33\OneDrive - University of Nottingham Malaysia\My Lectures\My Lectures for Autumn 2021\Computer fundamentals\Excer2 - Quah\MasterTestFiles\Task_D
+  Emulator_Name: HardwareSimulator
+  Check_Files:
+    - 
+  Test_Files:
+    - RAM512.tst 6
+    - RAM4K.tst 6
+    - PC.tst 14
+    
+Part5:
+  Folder_Name: Task_E
+  URL_of_tst: C:\Users\mss33\OneDrive - University of Nottingham Malaysia\My Lectures\My Lectures for Autumn 2021\Computer fundamentals\Excer2 - Quah\MasterTestFiles\Task_E
+  Emulator_Name: HardwareSimulator
+  Check_Files:
+    - 
+  Test_Files:
+    - MyALU.tst 16
