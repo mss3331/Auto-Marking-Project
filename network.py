@@ -3,17 +3,44 @@ import signal
 import subprocess
 import time
 import sys
-
+from threading import Thread
+# how to find and kill a process that reserved a port number
+# netstat -ano | findstr :8989
+# taskkill /PID <PID> /F
+def countdown(name, delay, count):
+    while count:
+        time.sleep(delay)
+        print(f'{name, time.ctime(time.time()), count}')
+        count -= 1
+class newThread(Thread):
+ def __init__(self, name, count):
+     Thread.__init__(self)
+     self.name = name
+     self.count = count
+ def run(self):
+     print("Starting: " + self.name + "\n")
+     countdown(self.name, 1,self.count)
+     print("Exiting: " + self.name + "\n")
 if __name__=='__main__':
+    # t = newThread("Thread 1", 5)
+    # t.start()
+    #
+    # t2 = newThread("Thread 2", 5)
+    # t2.start()
+    # t2.join()
+    # t.join()
     ################## information about subprocess argument ######################
     #The underlying object is Popen.
     #The input argument is passed to Popen.communicate() and thus to the subprocess’s stdin.
     ##############################################################################
-    folder_url = r'.\networking\Arjun Khetan_5176644_assignsubmission_file_'
+    folder_url = r"'.\networking\Arjun Khetan_5176644_assignsubmission_file_'"
     file_name = 'server2.c'
     file = os.path.join(folder_url, file_name)
     destination = os.path.join(folder_url,'ser2')
-    timeout_s=1
+    timeout_s=2
+    os.system('{} {} > outfile'.format(destination,'8989\n'))
+    with open('myfile.txt', "w") as outfile:
+        subprocess.run([destination, '8989'], stdout=outfile,timeout=timeout_s)
     # compile = subprocess.run(['gcc', file, '-o',destination,'-lws2_32'], capture_output=True, text=True,
     #                          shell=True)
     # print(compile.stdout, compile.stderr)
@@ -63,7 +90,8 @@ if __name__=='__main__':
     # sys.stdout = open('file.txt', 'w')
     # sys.stderr = open('file2.txt', 'w')
     try:
-        server = subprocess.Popen([destination, '8989'],text=True, shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        server = subprocess.Popen([destination, '8989','> foo.txt'],text=True, shell=True)#,
+                                  # stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                                   # , close_fds=False,
                                   # start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # print('im in try')
@@ -74,7 +102,7 @@ if __name__=='__main__':
         print('what the hell!')
     except subprocess.TimeoutExpired:
         print('im in excpetion')
-        print(server.stdout.readline())
+        # print(server.stdout.readline())
         # outs, errs = server.communicate()
         # server.kill()
         # server.stdout.close()
@@ -90,6 +118,15 @@ if __name__=='__main__':
         # result.append(p.stdout)
     # print(output)
     print('finished finally')
+
+
+
+
+
+
+
+
+
 
 
 
