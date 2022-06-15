@@ -33,14 +33,27 @@ if __name__=='__main__':
     #The underlying object is Popen.
     #The input argument is passed to Popen.communicate() and thus to the subprocess’s stdin.
     ##############################################################################
-    folder_url = r"'.\networking\Arjun Khetan_5176644_assignsubmission_file_'"
+    folder_url = r".\networking\Arjun Khetan_5176644_assignsubmission_file_"
     file_name = 'server2.c'
     file = os.path.join(folder_url, file_name)
     destination = os.path.join(folder_url,'ser2')
     timeout_s=2
-    os.system('{} {} > outfile'.format(destination,'8989\n'))
-    with open('myfile.txt', "w") as outfile:
-        subprocess.run([destination, '8989'], stdout=outfile,timeout=timeout_s)
+    f = open("myfile.txt", "w", encoding="utf-8")
+    try:
+        #This code hang as if timeout doesn't work. After searching, it turns out that this is due to PIP
+        compelete = subprocess.run([destination, '8989'], stdout=f, timeout=timeout_s)
+        print(destination)
+        print(compelete)
+    except subprocess.TimeoutExpired as t:
+        print(t)
+        f.close()
+        print(f.readline())
+        exit(0)
+    exit(0)
+
+    # os.system('{} {} > outfile'.format(destination,'8989\n'))
+    # with open('myfile.txt', "w") as outfile:
+    #     subprocess.run([destination, '8989'], stdout=outfile,timeout=timeout_s)
     # compile = subprocess.run(['gcc', file, '-o',destination,'-lws2_32'], capture_output=True, text=True,
     #                          shell=True)
     # print(compile.stdout, compile.stderr)
