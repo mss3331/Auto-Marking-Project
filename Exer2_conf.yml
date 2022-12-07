@@ -1,3 +1,7 @@
+# 0.8 means files and folder name should be at least 80% similar to the expected names
+# (e.g. Taks_A is equal to Task A and not equal to TASK_A. To make the auto-marking less
+# restrictive make  StringMatcher: 0.5
+StringMatcher: 0.6
 Part1:
   Folder_Name: Task_A
   URL_of_tst: .\MasterTestFiles\Task_A

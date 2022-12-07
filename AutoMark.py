@@ -95,7 +95,7 @@ def printError(message,extraInfo=None):
     input("Press Enter to Exit...")
     exit(-1)
 
-def _searchForDirOrFile(name,current_dir, threshold=0.8):
+def _searchForDirOrFile(name,current_dir, threshold):
     """This is a recursive function that search for a specific directory in a breadth first fashion
     (i.e. search first for the name in the current_dir then go deeper)
     :parameter
@@ -128,7 +128,7 @@ def _searchForDirOrFile(name,current_dir, threshold=0.8):
 
     return target_dir
 
-def _checkRequiredFiles(required_files_list, target_folder_name,url_of_our_tst,student_dir):
+def _checkRequiredFiles(required_files_list, target_folder_name,student_dir,threshold):
     """
     This function do two things:
      1- check the existence of required_files_list and add a penalty if a file is missing.
@@ -143,7 +143,7 @@ def _checkRequiredFiles(required_files_list, target_folder_name,url_of_our_tst,s
     #case one, we have multiple sections for the excersise, hence, we should have a target_folder_name
     total_penalties = 0
     all_feedbacks = target_folder_name+":"
-    target_dir = _searchForDirOrFile(name=target_folder_name, current_dir=student_dir)
+    target_dir = _searchForDirOrFile(name=target_folder_name, current_dir=student_dir,threshold=threshold)
     if target_dir:# if found a directory with same name then check the required files
         for file_name_penalty in required_files_list:
             if not file_name_penalty: # if there is no required files, continue. In ".yaml" it would be like "Check_Files: - "
@@ -151,7 +151,7 @@ def _checkRequiredFiles(required_files_list, target_folder_name,url_of_our_tst,s
             temp = file_name_penalty.strip().split(' ')# CPU diagram.pdf -5 --> temp=['CPU','diagram.pdf', '-5']
             penalty = float(temp[-1])
             file_name = ' '.join(temp[:-1])
-            found = _searchForDirOrFile(file_name, target_dir)
+            found = _searchForDirOrFile(file_name, target_dir,threshold=threshold)
             if not found:
                 total_penalties+=penalty
                 all_feedbacks +=file_name_penalty + ", "
@@ -181,6 +181,7 @@ def mark_submission(student_dir, use_our_tst=False):
         - mistakes_feedback_list: list of tuple (file_name, error_message) that contains only mistakes.
         This list is subset of feedbacks_dic
     """
+    threshold = configurations['StringMatcher']
     student_name = student_dir.name.split("_")[0] # Zaid Ahmad_3522_submision --> Zaid Ahmad
     marks_dic={} #dictionary that holds all the marks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
     feedbacks_dic={} #dictionary that holds all the feedbacks for each .tst file (e.g. "CPU.tst":10, "hack.tst":50 ...etc)
@@ -194,11 +195,15 @@ def mark_submission(student_dir, use_our_tst=False):
          2- Load our .tst files to the specified folder
         Step 1 and 2 are done in method "checkRequiredFiles"
         """
+        #this is not part of the excersise parts. it is just a string matcher threshold
+        if section=='StringMatcher':
+            continue
+
         required_files_list = configurations[section]["Check_Files"]
         target_folder_name = configurations[section]["Folder_Name"]
         url_of_our_tst = configurations[section]["URL_of_tst"]
         penalties_dic[section], penalty_feedback = _checkRequiredFiles(required_files_list,target_folder_name,
-                                                                       url_of_our_tst,student_dir)
+                                                                       student_dir,threshold)
         if penalties_dic[section] != 0:
             if feedbacks_dic.get("Penalties:"):
                 feedbacks_dic["Penalties:"] += penalty_feedback # concatinate the penalties of all sections
@@ -213,7 +218,7 @@ def mark_submission(student_dir, use_our_tst=False):
             mark = int(mark) # mark = "20" --> 20
 
             if target_folder_name: #if there is exist folder name, search for it
-                target_folder_path = _searchForDirOrFile(target_folder_name,student_dir) # search for specific path
+                target_folder_path = _searchForDirOrFile(target_folder_name,student_dir,threshold=threshold) # search for specific path
             else: target_folder_path = student_dir # otherwise use the student submission folder
 
 
