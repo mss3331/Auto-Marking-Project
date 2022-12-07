@@ -81,7 +81,7 @@ def checkStructure():
     # get list of all directories
     dir_list = os.scandir()
 
-    submissions_dir = getDirOrFile("submissions",dir_list, threshold=0.8)
+    submissions_dir = getDirOrFile("submissions",dir_list, threshold=0.5)
 
     if not submissions_dir:# if submissions_dir is None
         printError("submissions folder is not found in the current directory!!\n %s "%root)
@@ -104,6 +104,11 @@ def _searchForDirOrFile(name,current_dir, threshold=0.8):
     :return
     target_dir: is a DirEntry object that contains the dir. If not found None is returned
     """
+    # if for some reason we revieved none path, return none. Otherwise os.scan(None) will
+    #scan the ".\" ultimately will mark other submissions.
+    if current_dir==None:
+        return None
+    # target should either be the actual path of the target or the current path.
     target_dir=None
     dir_iterator= os.scandir(current_dir)
     found = getDirOrFile(name,dir_iterator, threshold= threshold)
@@ -214,7 +219,7 @@ def mark_submission(student_dir, use_our_tst=False):
 
             tst_file = _searchForDirOrFile(file_name,target_folder_path,threshold=1)
 
-            if tst_file:
+            if tst_file:#if the file name is found within the path
                 #here we either copy our .tst or use the student's .tst
                 if use_our_tst:
                     #students MyNot.tst path. #tst_file.path is actually path+name
@@ -242,7 +247,12 @@ def mark_submission(student_dir, use_our_tst=False):
                     marks_dic[file_name] = mark
             else: # if we didnt find the tst_file print error
                 marks_dic[file_name] = 0
-                feedbacks_dic[file_name] = "Error: %s not found!!"%file_name
+                #if we didn't find the folder then regardless of the .tst file the error should be
+                #folder not found
+                if target_folder_path == None:
+                    feedbacks_dic[file_name] = "Error: %s not found!!" % target_folder_name
+                else:
+                    feedbacks_dic[file_name] = "Error: %s not found!!"% file_name
 
 
     mistakes_feedback = [(key, feedbacks_dic[key]) for key in feedbacks_dic if feedbacks_dic[key] != SUCCESS ]
